@@ -29,7 +29,8 @@
     <string name="alarms">Alarms</string>
     <string name="style">Style</string>
 
-    <string name="holo_default">Graviton (Default)</string>
+    <string name="holo"></string>
+    <string name="default_tag">Graviton (Default)</string>
 
     <string name="apply">Apply</string>
     <string name="applying">Applying\u2026</string>
