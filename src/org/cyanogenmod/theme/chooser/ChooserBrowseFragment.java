@@ -18,20 +18,14 @@ package org.cyanogenmod.theme.chooser;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.content.res.CustomTheme;
 import android.graphics.Color;
 import android.view.Gravity;
-import org.cyanogenmod.theme.chooser.WallpaperAndIconPreviewFragment.IconInfo;
-import org.cyanogenmod.theme.util.BootAnimationHelper;
-import org.cyanogenmod.theme.util.IconPreviewHelper;
-import org.cyanogenmod.theme.util.ThemedTypefaceHelper;
-import org.cyanogenmod.theme.util.Utils;
-
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.content.res.ThemeConfig;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -63,10 +57,16 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import org.cyanogenmod.theme.chooser.WallpaperAndIconPreviewFragment.IconInfo;
+import org.cyanogenmod.theme.util.BootAnimationHelper;
+import org.cyanogenmod.theme.util.IconPreviewHelper;
+import org.cyanogenmod.theme.util.ThemedTypefaceHelper;
+import org.cyanogenmod.theme.util.Utils;
+
 public class ChooserBrowseFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final String TAG = ChooserBrowseFragment.class.getCanonicalName();
-    public static final String DEFAULT = CustomTheme.HOLO_DEFAULT;
+    public static final String DEFAULT = ThemeConfig.HOLO_DEFAULT;
 
     public ListView mListView;
     public LocalPagerAdapter mAdapter;
