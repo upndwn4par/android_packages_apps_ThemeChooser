@@ -15,15 +15,17 @@
  */
 package org.cyanogenmod.theme.chooser;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.ActivityNotFoundException;
 import android.graphics.Color;
 import android.view.Gravity;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import android.content.res.ThemeConfig;
 import android.content.res.Resources;
@@ -34,6 +36,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Browser;
 import android.provider.ThemesContract.ThemesColumns;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -45,16 +48,23 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.webkit.URLUtil;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import org.cyanogenmod.theme.chooser.WallpaperAndIconPreviewFragment.IconInfo;
@@ -62,6 +72,11 @@ import org.cyanogenmod.theme.util.BootAnimationHelper;
 import org.cyanogenmod.theme.util.IconPreviewHelper;
 import org.cyanogenmod.theme.util.ThemedTypefaceHelper;
 import org.cyanogenmod.theme.util.Utils;
+
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class ChooserBrowseFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -154,6 +169,8 @@ public class ChooserBrowseFragment extends Fragment
     public class LocalPagerAdapter extends CursorAdapter {
         List<String> mFilters;
         Context mContext;
+        HashMap<String, ThemedTypefaceHelper> mTypefaceHelpers =
+                new HashMap<String, ThemedTypefaceHelper>();
 
         public LocalPagerAdapter(Context context, Cursor c, List<String> filters) {
             super(context, c, 0);
@@ -266,8 +283,14 @@ public class ChooserBrowseFragment extends Fragment
 
         public void bindFontView(View view, Context context, String pkgName) {
             FontItemHolder item = (FontItemHolder) view.getTag();
-            ThemedTypefaceHelper helper = new ThemedTypefaceHelper();
-            helper.load(mContext, pkgName);
+            ThemedTypefaceHelper helper;
+            if (!mTypefaceHelpers.containsKey(pkgName)) {
+                helper = new ThemedTypefaceHelper();
+                helper.load(mContext, pkgName);
+                mTypefaceHelpers.put(pkgName, helper);
+            } else {
+                helper = mTypefaceHelpers.get(pkgName);
+            }
             Typeface typefaceNormal = helper.getTypeface(Typeface.NORMAL);
             Typeface typefaceBold = helper.getTypeface(Typeface.BOLD);
             item.textView.setTypeface(typefaceNormal);
@@ -435,12 +458,17 @@ public class ChooserBrowseFragment extends Fragment
         }
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mIconViewGroup.removeAllViews();
+        }
+
+        @Override
         protected void onPostExecute(List<IconInfo> icons) {
             if (!mIconViewGroup.getTag().toString().equals(mPkgName) || icons == null) {
                 return;
             }
 
-            mIconViewGroup.removeAllViews();
             for (IconInfo info : icons) {
                 LinearLayout.LayoutParams lparams = new LinearLayout.LayoutParams(0,
                         LayoutParams.WRAP_CONTENT, 1f);
