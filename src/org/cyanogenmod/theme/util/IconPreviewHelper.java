@@ -16,13 +16,11 @@
 package org.cyanogenmod.theme.util;
 
 import android.app.ActivityManager;
-import android.app.ComposedIconInfo;
 import android.app.IconPackHelper;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageItemInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
@@ -31,7 +29,6 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.SparseArray;
 
 /**
  * This class handles all the logic to build a preview icon
@@ -106,7 +103,7 @@ public class IconPreviewHelper {
         String activityName = component.getClassName();
         Drawable icon = getThemedIcon(packageName, activityName);
         if (icon == null) {
-            icon = getDefaultIcon(packageName, activityName);
+            icon = getIconNoTheme(packageName, activityName);
         }
         if (icon != null) {
             icon.setBounds(0, 0, mIconSize, mIconSize);
@@ -124,65 +121,31 @@ public class IconPreviewHelper {
         return drawable;
     }
 
-    /**
-     * Returns the default icon.  This can be the normal icon associated with the app or a composed
-     * icon if the icon pack supports background, mask, and/or foreground.
-     * @param pkgName
-     * @param activityName
-     * @return
-     */
-    private Drawable getDefaultIcon(String pkgName, String activityName) {
+    private Drawable getIconNoTheme(String pkgName, String activityName) {
         Drawable drawable = null;
         ComponentName component = new ComponentName(pkgName, activityName);
         PackageManager pm = mContext.getPackageManager();
-        Resources res = null;
         try {
             ActivityInfo info = pm.getActivityInfo(component, 0);
             ApplicationInfo appInfo = pm.getApplicationInfo(pkgName, 0);
 
             AssetManager assets = new AssetManager();
             assets.addAssetPath(appInfo.publicSourceDir);
-            res = new Resources(assets, mDisplayMetrics, mConfiguration);
+            Resources res = new Resources(assets, mDisplayMetrics, mConfiguration);
 
             final int iconId = info.icon != 0 ? info.icon : appInfo.icon;
-            info.themedIcon = 0;
-            setupComposedIcon(res, info, iconId);
             drawable = getFullResIcon(res, iconId);
         } catch (NameNotFoundException e2) {
            Log.w(TAG, "Unable to get the icon for " + pkgName + " using default");
         }
-        drawable = (drawable != null) ?
-                getComposedIcon(res, drawable) : getFullResDefaultActivityIcon();
+        drawable = (drawable != null) ? drawable : getFullResDefaultActivityIcon();
         return drawable;
-    }
-
-    private Drawable getComposedIcon(Resources res, Drawable baseIcon) {
-        ComposedIconInfo iconInfo = mIconPackHelper.getComposedIconInfo();
-        if (res != null && iconInfo != null && (iconInfo.iconBacks != null ||
-                iconInfo.iconMask != null || iconInfo.iconUpon != null)) {
-            return IconPackHelper.IconCustomizer.getComposedIconDrawable(baseIcon, res, iconInfo);
-        }
-        return baseIcon;
-    }
-
-    private void setupComposedIcon(Resources res, ActivityInfo info, int iconId) {
-        ComposedIconInfo iconInfo = mIconPackHelper.getComposedIconInfo();
-        if (iconInfo.iconBacks == null && iconInfo.iconMask == null && iconInfo.iconUpon == null) {
-            return;
-        }
-
-        res.setComposedIconInfo(iconInfo);
-
-        SparseArray<PackageItemInfo> icons = new SparseArray<PackageItemInfo>(1);
-        info.themedIcon = 0;
-        icons.put(iconId, info);
-        res.setIconResources(icons);
     }
 
     private Drawable getFullResIcon(Resources resources, int iconId) {
         Drawable d;
         try {
-            d = resources.getDrawableForDensity(iconId, mIconDpi, false);
+            d = resources.getDrawableForDensity(iconId, mIconDpi);
         } catch (Resources.NotFoundException e) {
             d = null;
         }
